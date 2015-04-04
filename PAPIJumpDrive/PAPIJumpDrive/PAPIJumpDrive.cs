@@ -21,6 +21,7 @@ namespace PAPIJumpDrive
 	public class PAPIJumpDrive : PartModule
 	{
 		public int LIGHTSPEED = 299792458;
+		public int MINIMUM_ALTITUDE_FROM_BODY = 100000;	// must be at least 100km away
 
 		private StartState fState;
 		private Vector3d TravelDirection;
@@ -64,6 +65,14 @@ namespace PAPIJumpDrive
 				var emod = part.FindModuleImplementing<ModuleEngines>();
 
 				if (fIsJumping) {
+					// we can only jump in space
+					if (vessel.altitude < MINIMUM_ALTITUDE_FROM_BODY || vessel.atmDensity > 0.0) {
+						fStatus = "Can't jump near planet or in atmosphere!";
+						fIsJumping = false;
+						return;
+					}
+
+					// for now we'll just jump to some random body
 					List<CelestialBody> bodies = FlightGlobals.Bodies;
 					var r = new System.Random();
 					CelestialBody someBody = bodies[r.Next(0, bodies.ToArray().Length)];
@@ -80,6 +89,7 @@ namespace PAPIJumpDrive
 					Krakensbane kbane = (Krakensbane)FindObjectOfType(typeof(Krakensbane));
 					kbane.setOffset(destinationPos);
 					print ("[JUMP] - Jump completed");
+					fStatus = "Jump Succeeded!";
 					fIsJumping = false;
 				}
 			} catch (Exception e) {
