@@ -44,4 +44,10 @@
     <Compile Include="PAPIJumpDrive.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <None Include="deploy.sh" />
+    <None Include="..\..\PartAssets\Parts\JumpDrive\part.cfg">
+      <Link>part.cfg</Link>
+    </None>
+  </ItemGroup>
 </Project>

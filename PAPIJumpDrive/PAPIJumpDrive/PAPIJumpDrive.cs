@@ -7,10 +7,6 @@ using KSP.IO;
 
 namespace PAPIJumpDrive
 {
-	// some constants
-	public class PAPIJumpDriveConstants {
-		public int LIGHTSPEED = 299792458;
-	}
 
 	// from https://github.com/BobPalmer/WarpDrive/blob/master/Source/WarpEngine/WarpEngine/ShipInfo.cs
 	public class ShipInfo
@@ -22,14 +18,27 @@ namespace PAPIJumpDrive
 		public RigidbodyConstraints Constraints { get; set; }
 	}
 
-	public class PAPIJumpModule : PartModule
+	public class PAPIJumpDrive : PartModule
 	{
+		public int LIGHTSPEED = 299792458;
+
 		private StartState fState;
+		private Vector3d TravelDirection;
+		private double Speed;
+		private CelestialBody PreviousBodyName;
+		private double OriginalFrameTrueRadius;
+		private double OriginalSpeed;
+		private double OriginalMomentumSqr;
+		private double SemiLatusOriginal;
+		private int ElipMode;
+
+		[KSPField]
+		public float WarpFactor = 0.0f;
 
 		[KSPField(guiActive = true, guiName = "Jump Drive", guiActiveEditor = false)]
 		public string fStatus = "inactive";	// current module status
 		public bool fIsJumping = false;	// is the device currently in a jump?
-		[KSPEvent(guiActive = true, active = true, guiName = "Jump!", guiActiveEditor = false, guiActiveUnfocused = false)]
+		[KSPEvent(guiActive = true, active = true, guiName = "Jump!", guiActiveEditor = false, guiActiveUnfocused = true)]
 		public void toggleJumping() {
 			fIsJumping = !fIsJumping;
 		}
@@ -62,7 +71,7 @@ namespace PAPIJumpDrive
 					Vector3d targetPos = someBody.getTruePositionAtUT(now);
 					double offset = someBody.sphereOfInfluence * 0.25;
 					Vector3d destinationPos = targetPos + new Vector3d(offset,0,0);
-					double distToGo = Vector3d.Distance( destinationPos, vessel.transform.position );
+					double distToGo = Vector3d.Distance( destinationPos, vessel.GetWorldPos3D() );
 					print(String.Format("[JUMP] - We will jump to {0} plus an offset so it will be {1}", vectorToString(targetPos), vectorToString(destinationPos)));
 					print(String.Format("[JUMP] - Target is {0}", someBody.GetName()));
 
