@@ -80,6 +80,7 @@ namespace PAPIJumpDrive
 					Vector3d targetPos = someBody.getTruePositionAtUT(now);
 					double offset = someBody.sphereOfInfluence * 0.25;
 					Vector3d destinationPos = targetPos + new Vector3d(offset,0,0);
+					Vector3d currentVel = vessel.GetObtVelocity();
 					double distToGo = Vector3d.Distance( destinationPos, vessel.GetWorldPos3D() );
 					print(String.Format("[JUMP] - We will jump to {0} plus an offset so it will be {1}", vectorToString(targetPos), vectorToString(destinationPos)));
 					print(String.Format("[JUMP] - Target is {0}", someBody.GetName()));
@@ -88,6 +89,10 @@ namespace PAPIJumpDrive
 					print ( String.Format("[JUMP] - From {0} to {1}, distance is {2}",vectorToString(vessel.GetWorldPos3D()), vectorToString(destinationPos), distToGo) );
 					Krakensbane kbane = (Krakensbane)FindObjectOfType(typeof(Krakensbane));
 					kbane.setOffset(destinationPos);
+
+					// now set the velocity to be the same as it was when you jumped
+					vessel.SetWorldVelocity(currentVel);
+
 					print ("[JUMP] - Jump completed");
 					fStatus = "Jump Succeeded!";
 					fIsJumping = false;
