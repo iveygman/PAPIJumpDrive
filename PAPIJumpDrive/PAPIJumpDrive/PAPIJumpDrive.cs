@@ -56,12 +56,12 @@ namespace PAPIJumpDrive
 					GUILayout.Label (vectorToString (body.getPositionAtUT (now)));
 					if (GUILayout.Button ("Jump High Orbit")) {
 						fJumpParams.Target = body;
-						fJumpParams.Altitude = Math.Max (5 * MINIMUM_ALTITUDE_FROM_BODY, body.maxAtmosphereAltitude * 5);
+						fJumpParams.Altitude = Math.Max (5 * MINIMUM_ALTITUDE_FROM_BODY, body.maxAtmosphereAltitude * 5) + (float)body.Radius;
 						fTargetIsSet = true;
 					}
 					if (GUILayout.Button ("Jump Low Orbit")) {
 						fJumpParams.Target = body;
-						fJumpParams.Altitude = Math.Min (MINIMUM_ALTITUDE_FROM_BODY, body.maxAtmosphereAltitude * 1.5f);
+						fJumpParams.Altitude = Math.Min (MINIMUM_ALTITUDE_FROM_BODY, body.maxAtmosphereAltitude * 1.5f) + (float)body.Radius;
 						fTargetIsSet = true;
 					}
 					GUILayout.EndHorizontal ();
