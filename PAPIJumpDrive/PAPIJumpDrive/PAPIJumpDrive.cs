@@ -21,6 +21,8 @@ namespace PAPIJumpDrive
 		private const float WINDOW_HEIGHT_PCT = 0.85f;
 		private const float WINDOW_WIDTH_PCT = 0.85f;
 
+		private AudioClip fWarpSound;
+
 		private StartState fState = 0;
 		private GUIStyle fWindowStyle, fLabelStyle, fButtonStyle, fBoxStyle;
 		private bool fHasInitStyles = false;
@@ -92,6 +94,7 @@ namespace PAPIJumpDrive
 					if (!fHasInitStyles) {
 						InitStyles();
 					}
+					fWarpSound = GetComponent<AudioSource>();
 				}
 			} catch (Exception e) {
 				print(String.Format("[JUMP] Error in OnStart - {0}", e.Message));
@@ -122,7 +125,7 @@ namespace PAPIJumpDrive
 		public void FixedUpdate() {
 			try {
 				if (vessel == null || fState == StartState.Editor) return;
-//				var emod = part.FindModuleImplementing<ModuleEngines>();
+				var emod = part.FindModuleImplementing<ModuleEngines>();
 
 				if (fIsJumping && fTargetIsSet) {
 					// we can only jump in space
@@ -133,6 +136,7 @@ namespace PAPIJumpDrive
 						return;
 					}
 	
+					emod.f
 					// for now we'll just jump to some random body
 					double now = Planetarium.GetUniversalTime();
 					Vector3d targetPos = fJumpParams.Target.getTruePositionAtUT(now);
@@ -146,6 +150,7 @@ namespace PAPIJumpDrive
 					print ( String.Format("[JUMP] - From {0} to {1}, distance is {2}",vectorToString(vessel.GetWorldPos3D()), vectorToString(destinationPos), distToGo) );
 					Krakensbane kbane = (Krakensbane)FindObjectOfType(typeof(Krakensbane));
 					kbane.setOffset(destinationPos);
+					audio.PlayOneShot(fWarpSound);
 
 					// now set the velocity to be the same as it was when you jumped
 					vessel.SetWorldVelocity(currentVel);
