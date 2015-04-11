@@ -37,6 +37,7 @@ namespace PAPIJumpDrive
 		private bool fShowWindow = false; 	// show jump menu?
 		public string fStatus = "inactive";	// current module status
 		private bool fTargetIsSet = false;	// do we have a destination?
+		private ScreenMessage fJumpDelayMessage = null;
 		private bool fIsJumping = false;	// is the device currently in a jump?
 		private JumpCoordinates fJumpParams = new JumpCoordinates();
 		[KSPEvent(guiActive = true, active = true, guiName = "Jump!", guiActiveEditor = false, guiActiveUnfocused = true)]
@@ -158,6 +159,10 @@ namespace PAPIJumpDrive
 					double elapsedSinceInitiate = Math.Abs( now - fJumpParams.JumpInitiateTime );
 					fShowWindow = false;
 					if (elapsedSinceInitiate < JUMP_SPINUP_TIME_SECONDS ) {
+						if (fJumpDelayMessage != null) {
+							ScreenMessages.RemoveMessage(fJumpDelayMessage);
+						}
+						fJumpDelayMessage = ScreenMessages.PostScreenMessage( String.Format("Spinning up jump drive... {0}s", (int)(JUMP_SPINUP_TIME_SECONDS - elapsedSinceInitiate)) );
 						print(String.Format("[JUMP] - Need {0} more seconds before we can jump", JUMP_SPINUP_TIME_SECONDS - elapsedSinceInitiate));
 						return;	// still spinning up
 					}
@@ -184,6 +189,7 @@ namespace PAPIJumpDrive
 					fIsJumping = false;
 					fTargetIsSet = false;
 					fJumpParams = new JumpCoordinates();
+					fJumpDelayMessage = null;
 				}
 			} catch (Exception e) {
 				print(String.Format("[JUMP] Error in OnFixedUpdate - {0},{1}\n\n{2}", e.Message, e.Source, e.StackTrace));
