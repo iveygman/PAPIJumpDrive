@@ -12,6 +12,7 @@ namespace PAPIJumpDrive
 	{
 		public CelestialBody Target { get; set; }
 		public float Altitude { get; set; }
+		public double JumpInitiateTime { get; set; } // when the jump was initiated
 	}
 
 	public class PAPIJumpDrive : PartModule
@@ -24,14 +25,16 @@ namespace PAPIJumpDrive
 		private const int MINIMUM_ALTITUDE_FROM_BODY = 100000;	// must be at least 100km away
 		private const float WINDOW_HEIGHT_PCT = 0.85f;
 		private const float WINDOW_WIDTH_PCT = 0.85f;
+		private const double JUMP_SPINUP_TIME_SECONDS = 60.0f;
 
 		private StartState fState = 0;
 		private GUIStyle fWindowStyle, fLabelStyle, fButtonStyle, fBoxStyle;
 		private bool fHasInitStyles = false;
-		private Rect fWindowPosition;
-		private bool fShowWindow = false;
+//		private Rect fWindowPosition;
 
 		[KSPField(guiActive = true, guiName = "Jump Drive", guiActiveEditor = false)]
+		// jump drive states
+		private bool fShowWindow = false; 	// show jump menu?
 		public string fStatus = "inactive";	// current module status
 		private bool fTargetIsSet = false;	// do we have a destination?
 		private bool fIsJumping = false;	// is the device currently in a jump?
@@ -61,11 +64,13 @@ namespace PAPIJumpDrive
 					if (GUILayout.Button ("Jump High Orbit")) {
 						fJumpParams.Target = body;
 						fJumpParams.Altitude = Math.Max (5 * MINIMUM_ALTITUDE_FROM_BODY, body.maxAtmosphereAltitude * 5) + (float)body.Radius;
+						fJumpParams.JumpInitiateTime = Planetarium.GetUniversalTime();
 						fTargetIsSet = true;
 					}
 					if (GUILayout.Button ("Jump Low Orbit")) {
 						fJumpParams.Target = body;
 						fJumpParams.Altitude = Math.Min (MINIMUM_ALTITUDE_FROM_BODY, body.maxAtmosphereAltitude * 1.5f) + (float)body.Radius;
+						fJumpParams.JumpInitiateTime = Planetarium.GetUniversalTime();
 						fTargetIsSet = true;
 					}
 					GUILayout.EndHorizontal ();
@@ -120,7 +125,7 @@ namespace PAPIJumpDrive
 				float windowHeight = WINDOW_HEIGHT_PCT * Screen.height;
 				float windowWidth = WINDOW_WIDTH_PCT * Screen.width;
 				Rect sr = new Rect (Screen.width / 2 - windowWidth / 2, Screen.height / 2 - windowHeight / 2, windowWidth, windowHeight);
-				fWindowPosition = GUILayout.Window (10, sr, DrawNavWindow, "Navigation", fWindowStyle);
+				GUILayout.Window (10, sr, DrawNavWindow, "Navigation", fWindowStyle);
 			}
 		}
 
@@ -138,7 +143,7 @@ namespace PAPIJumpDrive
 		public void FixedUpdate() {
 			try {
 				if (vessel == null || fState == StartState.Editor) return;
-				var emod = part.FindModuleImplementing<ModuleEngines>();
+//				var emod = part.FindModuleImplementing<ModuleEngines>();
 
 				if (fIsJumping && fTargetIsSet) {
 					// we can only jump in space
@@ -148,9 +153,14 @@ namespace PAPIJumpDrive
 						fTargetIsSet = false;
 						return;
 					}
-	
-					// for now we'll just jump to some random body
+
 					double now = Planetarium.GetUniversalTime();
+					double elapsedSinceInitiate = Math.Abs( now - fJumpParams.JumpInitiateTime );
+					if (elapsedSinceInitiate < JUMP_SPINUP_TIME_SECONDS ) {
+						print(String.Format("[JUMP] - Need {0} more seconds before we can jump", JUMP_SPINUP_TIME_SECONDS - elapsedSinceInitiate));
+						return;	// still spinning up
+					}
+
 					Vector3d targetPos = fJumpParams.Target.getTruePositionAtUT(now);
 					Vector3d destinationPos = targetPos + new Vector3d(fJumpParams.Altitude, 0, 0);
 					Vector3d currentVel = vessel.GetObtVelocity();
@@ -172,6 +182,7 @@ namespace PAPIJumpDrive
 					fStatus = "Jump Succeeded!";
 					fIsJumping = false;
 					fTargetIsSet = false;
+					fJumpParams = new JumpCoordinates();
 				}
 			} catch (Exception e) {
 				print(String.Format("[JUMP] Error in OnFixedUpdate - {0},{1}\n\n{2}", e.Message, e.Source, e.StackTrace));
