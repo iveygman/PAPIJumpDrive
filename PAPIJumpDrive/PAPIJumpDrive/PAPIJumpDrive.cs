@@ -156,6 +156,7 @@ namespace PAPIJumpDrive
 
 					double now = Planetarium.GetUniversalTime();
 					double elapsedSinceInitiate = Math.Abs( now - fJumpParams.JumpInitiateTime );
+					fShowWindow = false;
 					if (elapsedSinceInitiate < JUMP_SPINUP_TIME_SECONDS ) {
 						print(String.Format("[JUMP] - Need {0} more seconds before we can jump", JUMP_SPINUP_TIME_SECONDS - elapsedSinceInitiate));
 						return;	// still spinning up
