@@ -19,6 +19,9 @@ namespace PAPIJumpDrive
 	{
 		[KSPField]
 		public string fJumpSoundFile = "PiconAdvanced/Sounds/sound_bamf";
+		[KSPField]
+		public string fSpinupSoundFile = "PiconAdvanced/Sounds/sound_jump_spinup";
+		public FXGroup fJumpSpinupSoundGroup = null;
 		public FXGroup fJumpSoundGroup = null;
 
 		private const int LIGHTSPEED = 299792458;
@@ -67,12 +70,14 @@ namespace PAPIJumpDrive
 						fJumpParams.Altitude = Math.Max (5 * MINIMUM_ALTITUDE_FROM_BODY, body.maxAtmosphereAltitude * 5) + (float)body.Radius;
 						fJumpParams.JumpInitiateTime = Planetarium.GetUniversalTime();
 						fTargetIsSet = true;
+						fJumpSpinupSoundGroup.audio.Play();
 					}
 					if (GUILayout.Button ("Jump Low Orbit")) {
 						fJumpParams.Target = body;
 						fJumpParams.Altitude = Math.Min (MINIMUM_ALTITUDE_FROM_BODY, body.maxAtmosphereAltitude * 1.5f) + (float)body.Radius;
 						fJumpParams.JumpInitiateTime = Planetarium.GetUniversalTime();
 						fTargetIsSet = true;
+						fJumpSpinupSoundGroup.audio.Play();
 					}
 					GUILayout.EndHorizontal ();
 				}
@@ -107,6 +112,16 @@ namespace PAPIJumpDrive
 						fJumpSoundGroup.audio.Stop();
 						fJumpSoundGroup.audio.loop = false;
 					}
+
+					if (!GameDatabase.Instance.ExistsAudioClip(fSpinupSoundFile)) {
+						print(String.Format("[JUMP] Audio file not found: {0}", fSpinupSoundFile));
+					} else {
+						fJumpSpinupSoundGroup.audio = gameObject.AddComponent<AudioSource>();
+						fJumpSpinupSoundGroup.audio.clip = GameDatabase.Instance.GetAudioClip(fSpinupSoundFile);
+						fJumpSpinupSoundGroup.audio.Stop();
+						fJumpSpinupSoundGroup.audio.loop = false;
+					}
+
 					if (!fHasInitStyles) {
 						InitStyles();
 					}
