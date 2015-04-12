@@ -27,8 +27,8 @@ namespace PAPIJumpDrive
 
 		private const int LIGHTSPEED = 299792458;
 		private const int MINIMUM_ALTITUDE_FROM_BODY = 100000;	// must be at least 100km away
-		private const float WINDOW_HEIGHT_PCT = 0.35f;
-		private const float WINDOW_WIDTH_PCT = 0.35f;
+		private const float WINDOW_HEIGHT_PCT = 0.25f;
+		private const float WINDOW_WIDTH_PCT = 0.75f;
 		private const double JUMP_SPINUP_TIME_SECONDS = 60.0f;
 
 		private StartState fState = 0;
@@ -46,7 +46,6 @@ namespace PAPIJumpDrive
 		private string fPersistentXCoord = "0.0";
 		private string fPersistentYCoord = "0.0";
 		private string fPersistentZCoord = "0.0";
-//		private string fPersistentXCoord = "0.0";
 		private JumpCoordinates fJumpParams = new JumpCoordinates();
 		[KSPEvent(guiActive = true, active = true, guiName = "Jump!", guiActiveEditor = false, guiActiveUnfocused = true)]
 		public void toggleJumping() {
@@ -71,30 +70,6 @@ namespace PAPIJumpDrive
 
 		private void DrawNavWindow(int windowId) {
 			try{
-				// display navigation to different celestial bodies
-//				int total = FlightGlobals.Bodies.ToArray().Length;
-//				double now = Planetarium.GetUniversalTime ();
-//				foreach (CelestialBody body in FlightGlobals.Bodies) {
-//					GUILayout.BeginHorizontal ();
-//					GUILayout.Label (body.name);
-//					GUILayout.Space (100);
-//					GUILayout.Label (vectorToString (body.getPositionAtUT (now)));
-//					if (GUILayout.Button ("Jump High Orbit")) {
-//						fJumpParams.Target = body;
-//						fJumpParams.Altitude = Math.Max (5 * MINIMUM_ALTITUDE_FROM_BODY, body.maxAtmosphereAltitude * 5) + (float)body.Radius;
-//						fJumpParams.JumpInitiateTime = Planetarium.GetUniversalTime();
-//						fTargetIsSet = true;
-//						fJumpSpinupSoundGroup.audio.Play();
-//					}
-//					if (GUILayout.Button ("Jump Low Orbit")) {
-//						fJumpParams.Target = body;
-//						fJumpParams.Altitude = Math.Min (MINIMUM_ALTITUDE_FROM_BODY, body.maxAtmosphereAltitude * 1.5f) + (float)body.Radius;
-//						fJumpParams.JumpInitiateTime = Planetarium.GetUniversalTime();
-//						fTargetIsSet = true;
-//						fJumpSpinupSoundGroup.audio.Play();
-//					}
-//					GUILayout.EndHorizontal ();
-//				}
 				GUILayout.BeginHorizontal();
 				GUILayout.Label("Position X:");
 				fPersistentXCoord = GUILayout.TextField(fPersistentXCoord, 25);
@@ -109,6 +84,7 @@ namespace PAPIJumpDrive
 						fTargetIsSet = true;
 						fJumpParams.JumpCoord = vec;
 						fJumpParams.Altitude = 0.0f;
+						fJumpSpinupSoundGroup.audio.Play();
 					}
 				}
 				GUILayout.EndHorizontal();
