@@ -13,6 +13,7 @@ namespace PAPIJumpDrive
 		public CelestialBody Target { get; set; }
 		public float Altitude { get; set; }
 		public double JumpInitiateTime { get; set; } // when the jump was initiated
+		public Vector3d JumpCoord {get; set;}
 	}
 
 	public class PAPIJumpDrive : PartModule
@@ -26,8 +27,8 @@ namespace PAPIJumpDrive
 
 		private const int LIGHTSPEED = 299792458;
 		private const int MINIMUM_ALTITUDE_FROM_BODY = 100000;	// must be at least 100km away
-		private const float WINDOW_HEIGHT_PCT = 0.85f;
-		private const float WINDOW_WIDTH_PCT = 0.85f;
+		private const float WINDOW_HEIGHT_PCT = 0.35f;
+		private const float WINDOW_WIDTH_PCT = 0.35f;
 		private const double JUMP_SPINUP_TIME_SECONDS = 60.0f;
 
 		private StartState fState = 0;
@@ -42,12 +43,25 @@ namespace PAPIJumpDrive
 		private bool fTargetIsSet = false;	// do we have a destination?
 		private ScreenMessage fJumpDelayMessage = null;
 		private bool fIsJumping = false;	// is the device currently in a jump?
+		private string fPersistentXCoord = "0.0";
+		private string fPersistentYCoord = "0.0";
+		private string fPersistentZCoord = "0.0";
+//		private string fPersistentXCoord = "0.0";
 		private JumpCoordinates fJumpParams = new JumpCoordinates();
 		[KSPEvent(guiActive = true, active = true, guiName = "Jump!", guiActiveEditor = false, guiActiveUnfocused = true)]
 		public void toggleJumping() {
 			fIsJumping = !fIsJumping;
 			if (fIsJumping) {
 				fShowWindow = true;
+			}
+		}
+
+		private Vector3d validateCoords() {
+			try {
+				return new Vector3d( Convert.ToDouble(fPersistentXCoord), Convert.ToDouble(fPersistentYCoord), Convert.ToDouble(fPersistentZCoord) );
+			} catch (Exception e) {
+				print (String.Format ("[JUMP] - Couldn't parse coordinates: {0},{1}", e.Message, e.StackTrace));
+				return new Vector3d(0.0f, 0.0f, 0.0f);
 			}
 		}
 
@@ -58,30 +72,46 @@ namespace PAPIJumpDrive
 		private void DrawNavWindow(int windowId) {
 			try{
 				// display navigation to different celestial bodies
-				int total = FlightGlobals.Bodies.ToArray().Length;
-				double now = Planetarium.GetUniversalTime ();
-				foreach (CelestialBody body in FlightGlobals.Bodies) {
-					GUILayout.BeginHorizontal ();
-					GUILayout.Label (body.name);
-					GUILayout.Space (100);
-					GUILayout.Label (vectorToString (body.getPositionAtUT (now)));
-					if (GUILayout.Button ("Jump High Orbit")) {
-						fJumpParams.Target = body;
-						fJumpParams.Altitude = Math.Max (5 * MINIMUM_ALTITUDE_FROM_BODY, body.maxAtmosphereAltitude * 5) + (float)body.Radius;
+//				int total = FlightGlobals.Bodies.ToArray().Length;
+//				double now = Planetarium.GetUniversalTime ();
+//				foreach (CelestialBody body in FlightGlobals.Bodies) {
+//					GUILayout.BeginHorizontal ();
+//					GUILayout.Label (body.name);
+//					GUILayout.Space (100);
+//					GUILayout.Label (vectorToString (body.getPositionAtUT (now)));
+//					if (GUILayout.Button ("Jump High Orbit")) {
+//						fJumpParams.Target = body;
+//						fJumpParams.Altitude = Math.Max (5 * MINIMUM_ALTITUDE_FROM_BODY, body.maxAtmosphereAltitude * 5) + (float)body.Radius;
+//						fJumpParams.JumpInitiateTime = Planetarium.GetUniversalTime();
+//						fTargetIsSet = true;
+//						fJumpSpinupSoundGroup.audio.Play();
+//					}
+//					if (GUILayout.Button ("Jump Low Orbit")) {
+//						fJumpParams.Target = body;
+//						fJumpParams.Altitude = Math.Min (MINIMUM_ALTITUDE_FROM_BODY, body.maxAtmosphereAltitude * 1.5f) + (float)body.Radius;
+//						fJumpParams.JumpInitiateTime = Planetarium.GetUniversalTime();
+//						fTargetIsSet = true;
+//						fJumpSpinupSoundGroup.audio.Play();
+//					}
+//					GUILayout.EndHorizontal ();
+//				}
+				GUILayout.BeginHorizontal();
+				GUILayout.Label("Position X:");
+				fPersistentXCoord = GUILayout.TextField(fPersistentXCoord, 25);
+				GUILayout.Label("Position Y:");
+				fPersistentYCoord = GUILayout.TextField(fPersistentYCoord, 25);
+				GUILayout.Label("Position Z:");
+				fPersistentZCoord = GUILayout.TextField(fPersistentZCoord, 25);
+				if (GUILayout.Button("Jump Here")) {
+					Vector3d vec = validateCoords();
+					if (vec != new Vector3d(0.0f, 0.0f, 0.0f)) {
 						fJumpParams.JumpInitiateTime = Planetarium.GetUniversalTime();
 						fTargetIsSet = true;
-						fJumpSpinupSoundGroup.audio.Play();
+						fJumpParams.JumpCoord = vec;
+						fJumpParams.Altitude = 0.0f;
 					}
-					if (GUILayout.Button ("Jump Low Orbit")) {
-						fJumpParams.Target = body;
-						fJumpParams.Altitude = Math.Min (MINIMUM_ALTITUDE_FROM_BODY, body.maxAtmosphereAltitude * 1.5f) + (float)body.Radius;
-						fJumpParams.JumpInitiateTime = Planetarium.GetUniversalTime();
-						fTargetIsSet = true;
-						fJumpSpinupSoundGroup.audio.Play();
-					}
-					GUILayout.EndHorizontal ();
 				}
-
+				GUILayout.EndHorizontal();
 				GUI.DragWindow ();
 			} catch (Exception e) {
 				print(String.Format("[JUMP] Error in OnFixedUpdate - {0},{1}\n\n{2}", e.Message, e.Source, e.StackTrace));
@@ -182,12 +212,10 @@ namespace PAPIJumpDrive
 						return;	// still spinning up
 					}
 
-					Vector3d targetPos = fJumpParams.Target.getTruePositionAtUT(now);
+					Vector3d targetPos = fJumpParams.JumpCoord;// fJumpParams.Target.getTruePositionAtUT(now);
 					Vector3d destinationPos = targetPos + new Vector3d(fJumpParams.Altitude, 0, 0);
 					Vector3d currentVel = vessel.GetObtVelocity();
 					double distToGo = Vector3d.Distance( destinationPos, vessel.GetWorldPos3D() );
-					print(String.Format("[JUMP] - We will jump to {0} plus an offset so it will be {1}", vectorToString(targetPos), vectorToString(destinationPos)));
-					print(String.Format("[JUMP] - Target is {0}", fJumpParams.Target.GetName()));
 
 					// do the jump!
 					print ( String.Format("[JUMP] - From {0} to {1}, distance is {2}",vectorToString(vessel.GetWorldPos3D()), vectorToString(destinationPos), distToGo) );
